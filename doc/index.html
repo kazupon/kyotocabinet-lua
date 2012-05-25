@@ -1,0 +1,356 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <title>Kyoto Cabinet</title>
+    <link rel="stylesheet" href="luadoc.css" type="text/css" />
+	<!--meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/-->
+</head>
+
+<body>
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+<div id="main">
+
+<div id="navigation">
+
+
+<h1>LuaDoc</h1>
+<ul>
+	
+	<li><strong>Index</strong></li>
+	
+</ul>
+
+
+<!-- Module list -->
+
+<h1>Modules</h1>
+<ul>
+
+	<li>
+		<a href="modules/kyotocabinet.html">kyotocabinet</a>
+	</li>
+
+</ul>
+
+
+
+<!-- File list -->
+
+
+
+
+
+
+</div> <!-- id="navigation" -->
+
+<div id="content">
+
+
+
+<style type="text/css">
+p {
+  margin: 0.5ex 0.5ex;
+  text-indent: 1.2ex;
+}
+div {
+  margin: 0.5ex 0.5ex;
+}
+h1, h2, h3 {
+  margin: 15px 0px 10px 3px;
+  padding: 0px 0px;
+}
+pre {
+  margin: 0.8ex 1.0ex;
+  padding: 0.3ex 0.3ex;
+  background: none #eeeeee;
+  border: solid 1px #ccdddd;
+  font-size: 95%;
+}
+</style>
+
+<h1>Lua Binding of Kyoto Cabinet.</h1>
+
+<div>Kyoto Cabinet is a straightforward implementation of DBM.</div>
+
+<h2>Introduction</h2>
+
+<p>Kyoto Cabinet is a library of routines for managing a database.  The database is a simple data file containing records, each is a pair of a key and a value.  Every key and value is serial bytes with variable length.  Both binary data and character string can be used as a key and a value.  Each key must be unique within a database.  There is neither concept of data tables nor data types.  Records are organized in hash table or B+ tree.</p>
+
+<p>The following access methods are provided to the database: storing a record with a key and a value, deleting a record by a key, retrieving a record by a key.  Moreover, traversal access to every key are provided.  These access methods are similar to ones of the original DBM (and its followers: NDBM and GDBM) library defined in the UNIX standard.  Kyoto Cabinet is an alternative for the DBM because of its higher performance.</p>
+
+<p>Each operation of the hash database has the time complexity of "O(1)".  Therefore, in theory, the performance is constant regardless of the scale of the database.  In practice, the performance is determined by the speed of the main memory or the storage device.  If the size of the database is less than the capacity of the main memory, the performance will seem on-memory speed, which is faster than std::map of STL.  Of course, the database size can be greater than the capacity of the main memory and the upper limit is 8 exabytes.  Even in that case, each operation needs only one or two seeking of the storage device.</p>
+
+<p>Each operation of the B+ tree database has the time complexity of "O(log N)".  Therefore, in theory, the performance is logarithmic to the scale of the database.  Although the performance of random access of the B+ tree database is slower than that of the hash database, the B+ tree database supports sequential access in order of the keys, which realizes forward matching search for strings and range search for integers.  The performance of sequential access is much faster than that of random access.</p>
+
+<p>This library wraps the polymorphic database of the C++ API.  So, you can select the internal data structure by specifying the database name in runtime.  This library is thread-safe.</p>
+
+<h2>Installation</h2>
+
+<p>Install the latest version of Kyoto Cabinet beforehand and get the package of the Lua binding of Kyoto Cabinet.  Lua 5.1 or later is also required.</p>
+
+<p>Enter the directory of the extracted package then perform installation.</p>
+
+<pre>./configure
+make
+make check
+su
+make install
+</pre>
+
+<p>When a series of work finishes, the shared object file `kyotocabinet.so' is installed under a directory in the library path of Lua.</p>
+
+<p>Let the library search path include `/usr/local/lib'.</p>
+
+<pre>LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib"
+export LD_LIBRARY_PATH
+</pre>
+
+<p>The module `tokyocabinet' should be loaded in each source file of application programs.</p>
+
+<pre>kc = require("tokyocabinet")
+</pre>
+
+<p>All symbols of Kyoto Cabinet are defined in the table returned by the above "require" function.</p>
+
+<h2>Example</h2>
+
+<p>The following code is a typical example to use a database.</p>
+
+<pre>kc = require("kyotocabinet")
+
+-- create the database object
+db = kc.DB:new()
+
+-- open the database
+if not db:open("casket.kch", kc.DB.OWRITER + kc.DB.OCREATE) then
+   print("open error: " .. tostring(db:error()))
+end
+
+-- store records
+if not db:set("foo", "hop") or
+   not db:set("bar", "step") or
+   not db:set("baz", "jump") then
+   print("set error: " .. tostring(db:error()))
+end
+
+-- retrieve records
+value = db:get("foo")
+if value then
+   print(value)
+else
+   print("get error: " .. tostring(db:error()))
+end
+
+-- traverse records
+cur = db:cursor()
+cur:jump()
+while true do
+   local key, value = cur:get(true)
+   if not key then break end
+   print(key .. ":" .. value)
+end
+cur:disable()
+
+-- close the database
+if not db:close() then
+   print("close error: " .. tostring(db:error()))
+end
+</pre>
+
+<p>The following code is a more complex example, which uses the Visitor pattern.</p>
+
+<pre>kc = require("kyotocabinet")
+
+-- create the database object
+db = kc.DB:new()
+
+-- open the database
+if not db:open("casket.kch", kc.DB.OREADER) then
+   print("open error: " .. tostring(db:error()))
+end
+
+-- define the visitor
+VisitorImpl = {}
+function VisitorImpl:new()
+   local obj = {}
+   function obj:visit_full(key, value)
+      print(key .. ":" .. value)
+      return kc.Visitor.NOP
+   end
+   function obj:visit_empty(key)
+      print(key .. " is missing")
+      return kc.Visitor.NOP
+   end
+   local base = kc.Visitor:new()
+   setmetatable(obj, { __index = base})
+   return obj
+end
+visitor = VisitorImpl:new()
+
+-- retrieve a record with visitor
+if not db:accept("foo", visitor, false) or
+   not db:accept("dummy", visitor, false) then
+   print("accept error: " .. tostring(db:error()))
+end
+
+-- traverse records with visitor
+if not db:iterate(visitor, false) then
+   print("iterate error: " .. tostring(db:error()))
+end
+
+-- close the database
+if not db:close() then
+   print("close error: " .. tostring(db:error()))
+end
+</pre>
+
+<p>The following code is also a complex example, which is suited to the Lua style.</p>
+
+<pre>kc = require("kyotocabinet")
+
+-- define the functor
+function dbproc(db)
+
+   -- store records
+   db["foo"] = "hop"
+   db["bar"] = "step"
+   db[3] = "jump"
+
+   -- update records in transaction
+   function tranproc()
+      db["foo"] = 2.71828
+      return true
+   end
+   db:transaction(tranproc)
+
+   -- multiply a record value
+   function mulproc(key, value)
+      return tonumber(value) * 2
+   end
+   db:accept("foo", mulproc)
+
+   -- traverse records by iterator
+   for key, value in db:pairs() do
+      print(key .. ":" .. value)
+   end
+
+   -- upcase values by iterator
+   function upproc(key, value)
+      return string.upper(value)
+   end
+   db:iterate(upproc)
+
+   -- traverse records by cursor
+   function curproc(cur)
+      cur:jump()
+      function printproc(key, value)
+         print(key .. ":" .. value)
+         return Visitor.NOP
+      end
+      while cur:accept(printproc) do
+         cur:step()
+      end
+   end
+   db:cursor_process(curproc)
+
+end
+
+-- process the database by the functor
+kc.DB:process(dbproc, "casket.kch")
+</pre>
+
+<p>The following code is an example of word counting with the MapReduce framework.</p>
+
+<pre>kc = require("kyotocabinet")
+
+-- create the database object
+db = kc.DB:new()
+
+-- open the database
+if not db:open() then
+   print("open error: " .. tostring(db:error()))
+end
+
+-- store records
+db["1"] = "this is a pen"
+db["2"] = "what a beautiful pen this is"
+db["3"] = "she is beautiful"
+
+-- define the papper
+function map(key, value, emit)
+   local values = kc.split(value, " ")
+   for i = 1, #values do
+      if not emit(values[i], "") then
+         return false
+      end
+   end
+   return true
+end
+
+-- define the reducer
+function reduce(key, iter)
+   local count = 0
+   while true do
+      local value = iter()
+      if not value then
+         break
+      end
+      count = count + 1
+   end
+   print(key .. ": " .. count)
+   return true
+end
+
+-- execute the MapReduce process
+if not db:mapreduce(map, reduce) then
+   print("mapreduce error: " .. tostring(db:error()))
+end
+
+-- close the database
+if not db:close() then
+   print("close error: " .. tostring(db:error()))
+end
+</pre>
+
+<h2>License</h2>
+
+<div>Copyright (C) 2009-2010 FAL Labs</div>
+
+<p>Kyoto Cabinet is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version.</p>
+
+<p>Kyoto Cabinet is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.</p>
+<h2>Modules</h2>
+<table class="module_list">
+<!--<tr><td colspan="2">Modules</td></tr>-->
+
+	<tr>
+		<td class="name"><a href="modules/kyotocabinet.html">kyotocabinet</a></td>
+		<td class="summary">The Lua binding of Kyoto Cabinet.</td>
+	</tr>
+
+</table>
+
+
+
+
+
+
+</div> <!-- id="content" -->
+
+</div> <!-- id="main" -->
+
+<div id="about">
+Kyoto Cabinet Manual
+</div> <!-- id="about" -->
+
+</div> <!-- id="container" -->	
+</body>
+</html>

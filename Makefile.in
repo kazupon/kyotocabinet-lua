@@ -179,7 +179,7 @@ kyotocabinet.dylib : $(LIBOBJFILES)
 
 
 kcmttest : kcmttest.o
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS) $(LIBS) -pagezero_size 10000 -image_base 100000000
 
 
 

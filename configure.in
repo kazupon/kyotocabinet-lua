@@ -82,22 +82,22 @@ then
   PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$with_kc/lib/pkgconfig"
 fi
 
-# Specify the installation path of Lua
-AC_ARG_WITH(lua,
-  AC_HELP_STRING([--with-lua=DIR], [search DIR/include and DIR/lib for Lua]))
-if test -n "$with_lua"
+# Specify the installation path of Luajit
+AC_ARG_WITH(luajit,
+  AC_HELP_STRING([--with-luajit=DIR], [search DIR/include and DIR/lib for Luajit]))
+if test -n "$with_luajit"
 then
-  MYCPPFLAGS="$MYCPPFLAGS -I$with_lua/include"
-  MYLDFLAGS="$MYLDFLAGS -L$with_lua/lib"
-  CPATH="$CPATH:$with_lua/include"
-  LIBRARY_PATH="$LIBRARY_PATH:$with_lua/lib"
-  LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$with_lua/lib"
-  PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$with_lua/lib/pkgconfig"
+  MYCPPFLAGS="$MYCPPFLAGS -I$with_luajit/include"
+  MYLDFLAGS="$MYLDFLAGS -L$with_luajit/lib"
+  CPATH="$CPATH:$with_luajit/include"
+  LIBRARY_PATH="$LIBRARY_PATH:$with_luajit/lib"
+  LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$with_luajit/lib"
+  PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$with_luajit/lib/pkgconfig"
 fi
 
 # Messages
 printf '#================================================================\n'
-printf '# Configuring Kyoto Cabinet for Lua version %s%s.\n' "$PACKAGE_VERSION" "$enables"
+printf '# Configuring Kyoto Cabinet for Luajit version %s%s.\n' "$PACKAGE_VERSION" "$enables"
 printf '#================================================================\n'
 
 
@@ -107,7 +107,7 @@ printf '#================================================================\n'
 #================================================================
 
 # Lua commands
-LUA="lua"
+LUA="luajit"
 LUADOC="luadoc"
 
 # Lua environment
@@ -167,8 +167,8 @@ AC_CHECK_LIB(stdc++, main)
 AC_CHECK_LIB(regex, main)
 AC_CHECK_LIB(z, main)
 AC_CHECK_LIB(kyotocabinet, main)
-AC_CHECK_LIB(lua, main)
-AC_CHECK_LIB(lua$luaver, main)
+AC_CHECK_LIB(luajit, main)
+AC_CHECK_LIB(luajit$luaver, main)
 
 # Necessary headers
 AC_CHECK_HEADER(stdlib.h, true, AC_MSG_ERROR([stdlib.h is required]))

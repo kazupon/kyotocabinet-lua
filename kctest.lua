@@ -920,7 +920,7 @@ function procmisc(path)
    db:cursor_process(curprocfunc)
    printf("dumping records into snapshot:\n")
    local snappath = db:path()
-   if string.match(snappath, ".*\.kc[ht]$") then
+   if string.match(snappath, ".*\\.kc[ht]$") then
       snappath = snappath .. ".kcss"
    else
       snappath = "kctest.kcss"
@@ -947,9 +947,9 @@ function procmisc(path)
    os.remove(snappath)
    local copypath = db:path()
    local suffix = nil
-   if string.match(copypath, ".*\.kch$") then
+   if string.match(copypath, ".*\\.kch$") then
       suffix = ".kch"
-   elseif string.match(copypath, ".*\.kct$") then
+   elseif string.match(copypath, ".*\\.kct$") then
       suffix = ".kct"
    end
    if suffix then
